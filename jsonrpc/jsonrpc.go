@@ -15,7 +15,7 @@ type Response struct {
 }
 
 type Error struct {
-	Code    int32       `json:"code"`
+	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 }
@@ -26,6 +26,32 @@ const ErrorInvalidRequest = -32600
 const ErrorMethodNotFound = -32601
 const ErrorInvalidParams = -32602
 const ErrorInternalError = -32603
+
+func NewErrorResponse(code int, message string, data interface{}) Response {
+	return Response{
+		Error: Error{
+			Code:    code,
+			Message: message,
+			Data:    data,
+		},
+	}
+}
+
+func NewInvalidParamsResponse(msg string) Response {
+	return NewErrorResponse(ErrorInvalidParams, msg, nil)
+}
+
+func NewParamsTypeErrprResponse() Response {
+	return NewInvalidParamsResponse("params was not the correct type")
+}
+
+func NewDecodeParamsErrorResponse() Response {
+	return NewInvalidParamsResponse("could not decode params")
+}
+
+func NewMethodInvocationError(msg string, data interface{}) Response {
+	return NewErrorResponse(ErrorInternalError, msg, data)
+}
 
 func SerializeRequest(req Request) (string, error) {
 	j := map[string]interface{}{
