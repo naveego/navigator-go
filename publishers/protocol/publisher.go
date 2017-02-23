@@ -9,6 +9,7 @@ type InitializePublisherRequest struct {
 }
 
 type DiscoverShapesRequest struct {
+	PublisherInstance pipeline.PublisherInstance `json:"instance" mapstructure:"instance"`
 }
 
 type DiscoverShapesResponse struct {

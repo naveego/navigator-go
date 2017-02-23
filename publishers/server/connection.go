@@ -24,6 +24,7 @@ func (c *connection) serve() {
 		req, hasHeaders, err := reqReader.ReadRequest()
 		if err != nil {
 			if err == io.EOF {
+				logrus.Info("Client disconnected")
 				break
 			}
 
@@ -83,7 +84,7 @@ func (c *connection) handleTestConnection(req jsonrpc.Request) jsonrpc.Response 
 
 	result, err := h.TestConnection(testReq)
 	if err != nil {
-		return jsonrpc.NewMethodInvocationError("error testing connection", nil)
+		return jsonrpc.NewMethodInvocationError("error testing connection", err.Error())
 	}
 
 	return jsonrpc.Response{

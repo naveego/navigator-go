@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -20,10 +21,20 @@ func NewPublisherServer(addr string, handler interface{}) *PublisherServer {
 }
 
 func (srv *PublisherServer) ListenAndServe() error {
-	l, err := net.Listen("tcp", srv.Addr)
+	proto := "tcp"
+	addr := srv.Addr
+
+	p := strings.Index(srv.Addr, "://")
+	if p != -1 {
+		proto = srv.Addr[:p]
+		addr = srv.Addr[p+1:]
+	}
+
+	l, err := net.Listen(proto, addr)
 	if err != nil {
 		return err
 	}
+
 	return srv.Serve(l)
 }
 
