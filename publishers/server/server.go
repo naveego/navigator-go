@@ -27,10 +27,17 @@ func (srv *PublisherServer) ListenAndServe() error {
 	p := strings.Index(srv.Addr, "://")
 	if p != -1 {
 		proto = srv.Addr[:p]
-		addr = srv.Addr[p+1:]
+		addr = srv.Addr[p+3:]
 	}
 
-	l, err := net.Listen(proto, addr)
+	var l net.Listener
+	var err error
+	if proto == "namedpipes" {
+		l, err = getNamedPipeListener(addr)
+	} else {
+		l, err = net.Listen(proto, addr)
+	}
+
 	if err != nil {
 		return err
 	}
