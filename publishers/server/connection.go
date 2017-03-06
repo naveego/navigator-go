@@ -84,6 +84,7 @@ func (c *connection) handleTestConnection(req jsonrpc.Request) jsonrpc.Response 
 
 	result, err := h.TestConnection(testReq)
 	if err != nil {
+		logrus.Warn("error executing method: ", err)
 		return jsonrpc.NewMethodInvocationError("error testing connection", err.Error())
 	}
 
@@ -113,7 +114,7 @@ func (c *connection) handleDiscoverShapes(req jsonrpc.Request) jsonrpc.Response 
 
 	result, err := h.DiscoverShapes(discoverReq)
 	if err != nil {
-		return jsonrpc.NewErrorResponse(-32001, "method invocation error", nil)
+		return jsonrpc.NewErrorResponse(-32001, "method invocation error", err.Error())
 	}
 
 	return jsonrpc.Response{
