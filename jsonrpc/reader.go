@@ -150,7 +150,7 @@ func (i *ioRequestReader) ReadRequest() (Request, bool, error) {
 		err = json.Unmarshal(content, &req)
 
 		if err != nil {
-			logrus.Debugf("content: %s", string(content))
+			logrus.Debugf("content: %s - %s", string(content), err.Error())
 			return Request{}, false, errors.New("content was not valid json")
 		}
 		break
