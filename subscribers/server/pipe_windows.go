@@ -1,12 +1,11 @@
-// +build !windows
-
 package server
 
 import (
-	"errors"
 	"net"
+
+	"github.com/Microsoft/go-winio"
 )
 
 func getNamedPipeListener(addr string) (net.Listener, error) {
-	return nil, errors.New("Named pipes is only supported on Windows")
+	return winio.ListenPipe(addr, nil)
 }
