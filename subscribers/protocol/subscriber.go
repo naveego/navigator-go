@@ -32,3 +32,19 @@ type TestConnectionResponse struct {
 type ConnectionTester interface {
 	TestConnection(request TestConnectionRequest) (TestConnectionResponse, error)
 }
+
+type ReceiveShapeRequest struct {
+	SubscriberInstance pipeline.SubscriberInstance `json:"instance" mapstructure:"instance"`
+	Pipeline           pipeline.Pipeline           `json:"pipeline" mapstructure:"pipeline"`
+	Shape              pipeline.ShapeDefinition    `json:"shape" mapstructure:"shape"`
+	DataPoint          pipeline.DataPoint          `json:"data" mapstructure:"data"`
+}
+
+type ReceiveShapeResponse struct {
+	Success bool   `json:"success" mapstructure:"success"`
+	Message string `json:"message" mapstructure:"message"`
+}
+
+type DataPointReceiver interface {
+	ReceiveDataPoint(request ReceiveShapeRequest) (ReceiveShapeResponse, error)
+}

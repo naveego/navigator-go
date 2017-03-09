@@ -45,6 +45,8 @@ func (c *connection) serve() {
 			resp = c.handleDiscoverShapes(req)
 		case "testConnection":
 			resp = c.handleTestConnection(req)
+		case "receiveDataPoint":
+			resp = c.handleReceiveShape(req)
 		}
 
 		if err != nil {
@@ -113,6 +115,35 @@ func (c *connection) handleDiscoverShapes(req jsonrpc.Request) jsonrpc.Response 
 	}
 
 	result, err := h.DiscoverShapes(discoverReq)
+	if err != nil {
+		return jsonrpc.NewErrorResponse(-32001, "method invocation error", err.Error())
+	}
+
+	return jsonrpc.Response{
+		Result: result,
+	}
+}
+
+func (c *connection) handleReceiveShape(req jsonrpc.Request) jsonrpc.Response {
+	h, i := c.srv.handler.(subproto.DataPointReceiver)
+	if !i {
+		return jsonrpc.Response{}
+	}
+
+	var receiveReq subproto.ReceiveShapeRequest
+
+	paramsRaw, ok := req.Params.(map[string]interface{})
+	if !ok {
+		return jsonrpc.NewInvalidParamsResponse("params was not a map[string]interface{}")
+	}
+
+	err := mapstructure.Decode(paramsRaw, &receiveReq)
+	if err != nil {
+		logrus.Warn("params could not be decoded: ", err)
+		return jsonrpc.NewInvalidParamsResponse("params could not be decoded")
+	}
+
+	result, err := h.ReceiveDataPoint(receiveReq)
 	if err != nil {
 		return jsonrpc.NewErrorResponse(-32001, "method invocation error", err.Error())
 	}
