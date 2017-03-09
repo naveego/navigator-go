@@ -74,7 +74,10 @@ func SerializeRequest(req Request) (string, error) {
 func SerializeResponse(res Response) (string, error) {
 	j := map[string]interface{}{
 		"jsonrpc": "2.0",
-		"id":      res.ID,
+	}
+
+	if res.ID != "" {
+		j["id"] = res.ID
 	}
 
 	if res.Error.Code != 0 {

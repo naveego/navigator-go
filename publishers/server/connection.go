@@ -6,6 +6,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/mapstructure"
+	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/jsonrpc"
 	pubproto "github.com/naveego/navigator-go/publishers/protocol"
 )
@@ -45,6 +46,8 @@ func (c *connection) serve() {
 			resp = c.handleDiscoverShapes(req)
 		case "testConnection":
 			resp = c.handleTestConnection(req)
+		case "publishData":
+			resp = c.handlePublishData(req)
 		}
 
 		if err != nil {
@@ -120,4 +123,58 @@ func (c *connection) handleDiscoverShapes(req jsonrpc.Request) jsonrpc.Response 
 	return jsonrpc.Response{
 		Result: result,
 	}
+}
+
+func (c *connection) handlePublishData(req jsonrpc.Request) jsonrpc.Response {
+	h, i := c.srv.handler.(pubproto.DataPublisher)
+	if !i {
+		return jsonrpc.Response{}
+	}
+
+	var publishReq pubproto.PublishRequest
+
+	paramsRaw, ok := req.Params.(map[string]interface{})
+	if !ok {
+		return jsonrpc.NewInvalidParamsResponse("params was not a map[string]interface{}")
+	}
+
+	err := mapstructure.Decode(paramsRaw, &publishReq)
+	if err != nil {
+		logrus.Warn("params could not be decoded: ", err)
+		return jsonrpc.NewInvalidParamsResponse("params could not be decoded")
+
+	}
+
+	if err != nil {
+		return jsonrpc.NewErrorResponse(-32001, "method invocation error", err.Error())
+	}
+
+	go c.sendData(h, publishReq)
+	return jsonrpc.Response{
+		Result: map[string]interface{}{
+			"success": true,
+		},
+	}
+}
+
+func (c *connection) sendData(handler pubproto.DataPublisher, req pubproto.PublishRequest) {
+	dt := &rpcDataTransport{
+		writer: jsonrpc.NewResponseWriter(c.conn),
+	}
+
+	handler.Publish(req, dt)
+}
+
+type rpcDataTransport struct {
+	writer *jsonrpc.ResponseWriter
+}
+
+func (dt *rpcDataTransport) Send(dataPoints []pipeline.DataPoint) error {
+	jr := jsonrpc.Request{
+		Method: "dataPointsPublished",
+		Params: dataPoints,
+	}
+	logrus.Info("Writing data point back")
+	dt.writer.WriteRequest(jr)
+	return nil
 }

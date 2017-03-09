@@ -32,3 +32,20 @@ func (r *ResponseWriter) WriteResponse(res Response) error {
 
 	return nil
 }
+
+func (r *ResponseWriter) WriteRequest(req Request) error {
+	content, err := SerializeRequest(req)
+	if err != nil {
+		return err
+	}
+
+	headers := fmt.Sprintf("Content-Length: %d\r\n\r\n", len([]byte(content)))
+	resBytes := append([]byte(headers), []byte(content)...)
+
+	_, err = r.writer.Write(resBytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
