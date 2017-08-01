@@ -41,12 +41,16 @@ func (c *connection) serve() {
 		var resp jsonrpc.Response
 
 		switch req.Method {
+		case "init":
+			resp = c.handleInit(req)
 		case "discoverShapes":
 			resp = c.handleDiscoverShapes(req)
 		case "testConnection":
 			resp = c.handleTestConnection(req)
 		case "receiveDataPoint":
 			resp = c.handleReceiveShape(req)
+		case "dispose":
+			resp = c.handleDispose(req)
 		}
 
 		if err != nil {
@@ -63,6 +67,36 @@ func (c *connection) serve() {
 		}
 	}
 
+}
+
+func (c *connection) handleInit(req jsonrpc.Request) jsonrpc.Response {
+	h, i := c.srv.handler.(subproto.DataPointReceiver)
+	if !i {
+		return jsonrpc.Response{}
+	}
+
+	paramsRaw, ok := req.Params.(map[string]interface{})
+	if !ok {
+		return jsonrpc.NewParamsTypeErrprResponse()
+	}
+
+	var initReq subproto.InitRequest
+
+	err := mapstructure.Decode(paramsRaw, &initReq)
+	if err != nil {
+		logrus.Warn("params could not be decoded: ", err)
+		return jsonrpc.NewDecodeParamsErrorResponse()
+	}
+
+	result, err := h.Init(initReq)
+	if err != nil {
+		logrus.Warn("error executing method: ", err)
+		return jsonrpc.NewMethodInvocationError("error initializing subscriber ", err.Error())
+	}
+
+	return jsonrpc.Response{
+		Result: result,
+	}
 }
 
 func (c *connection) handleTestConnection(req jsonrpc.Request) jsonrpc.Response {
@@ -87,7 +121,7 @@ func (c *connection) handleTestConnection(req jsonrpc.Request) jsonrpc.Response 
 	result, err := h.TestConnection(testReq)
 	if err != nil {
 		logrus.Warn("error executing method: ", err)
-		return jsonrpc.NewMethodInvocationError("error testing connection", err.Error())
+		return jsonrpc.NewMethodInvocationError("error testing connection ", err.Error())
 	}
 
 	return jsonrpc.Response{
@@ -146,6 +180,36 @@ func (c *connection) handleReceiveShape(req jsonrpc.Request) jsonrpc.Response {
 	result, err := h.ReceiveDataPoint(receiveReq)
 	if err != nil {
 		return jsonrpc.NewErrorResponse(-32001, "method invocation error", err.Error())
+	}
+
+	return jsonrpc.Response{
+		Result: result,
+	}
+}
+
+func (c *connection) handleDispose(req jsonrpc.Request) jsonrpc.Response {
+	h, i := c.srv.handler.(subproto.DataPointReceiver)
+	if !i {
+		return jsonrpc.Response{}
+	}
+
+	paramsRaw, ok := req.Params.(map[string]interface{})
+	if !ok {
+		return jsonrpc.NewParamsTypeErrprResponse()
+	}
+
+	var dispReq subproto.DisposeRequest
+
+	err := mapstructure.Decode(paramsRaw, &dispReq)
+	if err != nil {
+		logrus.Warn("params could not be decoded: ", err)
+		return jsonrpc.NewDecodeParamsErrorResponse()
+	}
+
+	result, err := h.Dispose(dispReq)
+	if err != nil {
+		logrus.Warn("error executing method: ", err)
+		return jsonrpc.NewMethodInvocationError("error initializing subscriber ", err.Error())
 	}
 
 	return jsonrpc.Response{
