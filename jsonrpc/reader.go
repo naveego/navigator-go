@@ -17,6 +17,7 @@ var (
 
 type RequestReader interface {
 	ReadRequest() (Request, bool, error)
+	ReadResponse() (Response, bool, error)
 }
 
 func NewRequestBuffer(data []byte) *RequestBuffer {
@@ -152,6 +153,67 @@ func (i *ioRequestReader) ReadRequest() (Request, bool, error) {
 		if err != nil {
 			logrus.Debugf("content: %s - %s", string(content), err.Error())
 			return Request{}, false, errors.New("content was not valid json")
+		}
+		break
+	}
+
+	return req, true, nil
+}
+
+func (i *ioRequestReader) ReadResponse() (Response, bool, error) {
+	var req Response
+	var headers map[string]string
+
+	contentLength := 0
+	hasReadHeaders := false
+
+	for {
+		dataBuf := make([]byte, 512)
+		bc, err := i.reader.Read(dataBuf)
+		if err != nil {
+			return Response{}, false, err
+		}
+
+		logrus.Debugf("Appending data: %d", bc)
+		i.buf.Append(dataBuf[:bc])
+
+		if !hasReadHeaders {
+			var exist bool
+			headers, exist, err = i.buf.ReadHeaders()
+			if err != nil {
+				return Response{}, false, err
+			}
+			if !exist {
+				continue
+			}
+
+			contentLengthStr, ok := headers["Content-Length"]
+			if !ok {
+				return Response{}, false, errors.New("no content length was provided")
+			}
+			contentLength, err = strconv.Atoi(contentLengthStr)
+			if err != nil {
+				return Response{}, false, errors.New("invalid content length")
+			}
+
+		}
+		hasReadHeaders = true
+
+		if i.buf.index < contentLength {
+			continue
+		}
+
+		content, success := i.buf.ReadContent(contentLength)
+		if !success {
+			return Response{}, false, errors.New("could not read content")
+		}
+
+		req = Response{}
+		err = json.Unmarshal(content, &req)
+
+		if err != nil {
+			logrus.Debugf("content: %s - %s", string(content), err.Error())
+			return Response{}, false, errors.New("content was not valid json")
 		}
 		break
 	}

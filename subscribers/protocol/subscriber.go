@@ -65,3 +65,9 @@ type DataPointReceiver interface {
 	ReceiveDataPoint(request ReceiveShapeRequest) (ReceiveShapeResponse, error)
 	Dispose(request DisposeRequest) (DisposeResponse, error)
 }
+
+type Subscriber interface {
+	ConnectionTester
+	DataPointReceiver
+	ShapeDiscoverer
+}
