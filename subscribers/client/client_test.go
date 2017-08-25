@@ -79,22 +79,23 @@ func init() {
 
 func Test_publisherProxy_TestConnection(t *testing.T) {
 
-	var err error
-	var sut protocol.Subscriber
-	conn, err := net.Dial("tcp", "127.0.0.1:54321")
-	sut, err = NewSubscriber(conn)
+	Convey("should call method and get response", t, func() {
+		var err error
+		var sut protocol.Subscriber
+		conn, err := net.Dial("tcp", "127.0.0.1:54321")
+		sut, err = NewSubscriber(conn)
 
-	result, err := sut.TestConnection(protocol.TestConnectionRequest{
-		Settings: map[string]interface{}{},
+		result, err := sut.TestConnection(protocol.TestConnectionRequest{
+			Settings: map[string]interface{}{},
+		})
+
+		Convey("should call method without error", func() {
+			So(err, ShouldBeNil)
+			So(result, ShouldNotBeNil)
+		})
+
+		defer conn.Close()
 	})
-
-	Convey("should call method without error", func() {
-		So(err, ShouldBeNil)
-		So(result, ShouldNotBeNil)
-	})
-
-	defer conn.Close()
-	//})
 }
 
 func Test_subscriberProxy_ReceiveDataPoint(t *testing.T) {

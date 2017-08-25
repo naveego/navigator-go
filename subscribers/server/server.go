@@ -67,13 +67,6 @@ func (srv *SubscriberServer) Serve(listener net.Listener) error {
 	}
 }
 
-func (s *SubscriberServer) newConnection(conn net.Conn) *connection {
-	return &connection{
-		srv:  s,
-		conn: conn,
-	}
-}
-
 type ServerError struct {
 	Code    int
 	Message string
