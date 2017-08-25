@@ -28,7 +28,7 @@ func (c *connection) serve() {
 				break
 			}
 
-			logrus.Warnf("could not read request: (%T) %v", err, err)
+			logrus.Warn("could not read request: " + err.Error())
 			continue
 		}
 		if !hasHeaders {

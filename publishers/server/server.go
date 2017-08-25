@@ -3,8 +3,6 @@ package server
 import (
 	"fmt"
 	"net"
-	"net/rpc"
-	"net/rpc/jsonrpc"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -23,23 +21,13 @@ func NewPublisherServer(addr string, handler interface{}) *PublisherServer {
 }
 
 func (srv *PublisherServer) ListenAndServe() error {
+	proto := "tcp"
 	addr := srv.Addr
 
-	listener, err := OpenListener(addr)
-
-	if err != nil {
-		return err
-	}
-
-	return srv.Serve(listener)
-}
-
-func OpenListener(addr string) (net.Listener, error) {
-	proto := "tcp"
-	p := strings.Index(addr, "://")
+	p := strings.Index(srv.Addr, "://")
 	if p != -1 {
-		proto = addr[:p]
-		addr = addr[p+3:]
+		proto = srv.Addr[:p]
+		addr = srv.Addr[p+3:]
 	}
 
 	var l net.Listener
@@ -50,7 +38,11 @@ func OpenListener(addr string) (net.Listener, error) {
 		l, err = net.Listen(proto, addr)
 	}
 
-	return l, err
+	if err != nil {
+		return err
+	}
+
+	return srv.Serve(l)
 }
 
 func (srv *PublisherServer) Serve(listener net.Listener) error {
@@ -59,17 +51,14 @@ func (srv *PublisherServer) Serve(listener net.Listener) error {
 	logrus.Infof("Listening for connections on %s", srv.Addr)
 
 	for {
-		conn, err := listener.Accept()
+		rw, err := listener.Accept()
 		if err != nil {
 			return err
 		}
 
 		logrus.Infof("Client connected")
-		server := rpc.NewServer()
-		wrapper := &wrapper{publisher: srv.handler}
-		server.RegisterName("Publisher", wrapper)
-		codec := jsonrpc.NewServerCodec(conn)
-		server.ServeCodec(codec)
+		conn := srv.newConnection(rw)
+		go conn.serve()
 	}
 }
 

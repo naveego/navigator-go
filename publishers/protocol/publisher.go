@@ -37,12 +37,6 @@ type ConnectionTester interface {
 type PublishRequest struct {
 	PublisherInstance pipeline.PublisherInstance `json:"instance" mapstructure:"instance"`
 	PublishedShape    pipeline.ShapeDefinition   `json:"shape" mapstructure:"shape"`
-	PublishToAddress  string                     `json:"publishToAddress" mapstructure:"publishToAddress"`
-}
-
-type PublishResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
 }
 
 type DataPublisher interface {

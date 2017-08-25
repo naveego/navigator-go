@@ -151,8 +151,8 @@ func (c *connection) handlePublishData(req jsonrpc.Request) jsonrpc.Response {
 
 	go c.sendData(h, publishReq)
 	return jsonrpc.Response{
-		Result: pubproto.PublishResponse{
-			Success: true,
+		Result: map[string]interface{}{
+			"success": true,
 		},
 	}
 }
