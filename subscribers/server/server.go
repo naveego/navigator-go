@@ -3,6 +3,8 @@ package server
 import (
 	"fmt"
 	"net"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -51,14 +53,17 @@ func (srv *SubscriberServer) Serve(listener net.Listener) error {
 	logrus.Infof("Listening for connections on %s", srv.Addr)
 
 	for {
-		rw, err := listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			return err
 		}
 
 		logrus.Infof("Client connected")
-		conn := srv.newConnection(rw)
-		go conn.serve()
+		server := rpc.NewServer()
+		wrapper := &wrapper{subscriber: srv.handler}
+		server.RegisterName("Subscriber", wrapper)
+		codec := jsonrpc.NewServerCodec(conn)
+		server.ServeCodec(codec)
 	}
 }
 
