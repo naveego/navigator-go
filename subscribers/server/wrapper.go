@@ -4,6 +4,7 @@ import (
 	"github.com/naveego/navigator-go/subscribers/protocol"
 )
 
+// wrapper adapts the protocol.* interfaces to the pattern required by net/rpc/jsonrpc.
 type wrapper struct {
 	subscriber interface{}
 }
