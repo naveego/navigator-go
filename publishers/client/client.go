@@ -5,6 +5,7 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 )
@@ -51,7 +52,7 @@ func (p *publisherProxy) Publish(instance pipeline.PublisherInstance, shape pipe
 		PublisherInstance: instance,
 		PublishToAddress:  p.replyToAddr,
 	}
-
+	logrus.Debug("Calling Publish through client")
 	err := p.client.Call("Publisher.Publish", request, &dummy)
 
 	return err

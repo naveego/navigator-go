@@ -37,7 +37,7 @@ func (w *wrapper) TestConnection(request protocol.TestConnectionRequest, respons
 }
 
 func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.PublishResponse) (err error) {
-
+	logrus.Info("Calling Publish")
 	*response = protocol.PublishResponse{
 		Success: false,
 	}
@@ -53,7 +53,7 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 		logrus.Debugf("PublishToAddress was %s", request.PublishToAddress)
 		publishToURL, err := url.Parse(request.PublishToAddress)
 		if err != nil {
-			return fmt.Errorf("PublishToAddress '%s' was malformed: %s", err)
+			return fmt.Errorf("PublishToAddress '%s' was malformed: %s", request.PublishToAddress, err)
 		}
 		conn, err := net.Dial("tcp", publishToURL.Host)
 		if err != nil {
@@ -67,7 +67,10 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 		}
 
 		// Now it's up to the publisher to go off and pump the datapoints.
-		go s.Publish(request, transport)
+		go func() {
+			defer conn.Close()
+			s.Publish(request, transport)
+		}()
 
 		// We respond that we started the publisher.
 		*response = protocol.PublishResponse{
