@@ -39,6 +39,8 @@ func (d *DataPointCollector) Start() error {
 		return err
 	}
 
+	d.listener = listener
+
 	go func() {
 		for {
 			logrus.Debug("Listening for connections")
