@@ -1,2 +1,2 @@
-subscriber-path: "console_subscriber.exe"
+#subscriber-path: "console_subscriber.exe"
 addr: "tcp://:50001"

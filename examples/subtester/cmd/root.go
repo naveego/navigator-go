@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -21,6 +22,8 @@ import (
 )
 
 var cfgFile string
+var conn io.ReadWriteCloser
+var subscriber protocol.Subscriber
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -29,26 +32,26 @@ var RootCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		var err error
+
 		fmt.Printf("Configuration: %#v\n", viper.AllSettings())
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		subcmd := exec.CommandContext(ctx, viper.GetString("subscriber-path"), viper.GetString("addr"))
+		subscriberPath := viper.GetString("subscriber-path")
+		if subscriberPath != "" {
+			subcmd := exec.CommandContext(ctx, viper.GetString("subscriber-path"), viper.GetString("addr"))
 
-		subcmd.Stdout = os.Stdout
+			subcmd.Stdout = os.Stdout
 
-		err := subcmd.Start()
-		check(err)
+			err := subcmd.Start()
+			check(err)
+		}
 
 		<-time.After(time.Second * 1)
 
-		conn, err := DefaultConnectionFactory(viper.GetString("addr"))
-		check(err)
-		defer conn.Close()
-
-		subscriber, err := client.NewSubscriber(conn)
-		check(err)
+		connect()
 
 		go func() {
 			for {
@@ -62,7 +65,10 @@ var RootCmd = &cobra.Command{
 				choice := 0
 
 				_, err = fmt.Fscanf(os.Stdin, "%d", &choice)
-				check(err)
+				if err != nil {
+					fmt.Println("invalid selection")
+					continue
+				}
 
 				switch choice {
 				case 1:
@@ -108,6 +114,29 @@ var RootCmd = &cobra.Command{
 	},
 }
 
+func connect() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Connection borked (is the subscriber running?): ", err)
+		}
+	}()
+
+	var err error
+	fmt.Println("connecting...")
+
+	if conn != nil {
+		conn.Close()
+	}
+
+	conn, err = DefaultConnectionFactory(viper.GetString("addr"))
+	check(err)
+
+	subscriber, err = client.NewSubscriber(conn)
+	check(err)
+	fmt.Println("connected")
+}
+
 func readMessage(message interface{}) error {
 	fmt.Println("Message structure:")
 	encoder := json.NewEncoder(os.Stdout)
@@ -125,6 +154,7 @@ func readMessage(message interface{}) error {
 func writeResponse(resp interface{}, err error) {
 	if err != nil {
 		fmt.Println("subscriber error: ", err)
+		connect()
 	}
 
 	fmt.Print("\033[32mResponse:\033[0m")
@@ -181,7 +211,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.subtester.yaml)")
-	RootCmd.PersistentFlags().String("subscriber-path", "", "path to subscriber executable")
+	RootCmd.PersistentFlags().String("subscriber-path", "", "optional; path to subscriber executable if it's not already running")
 	RootCmd.PersistentFlags().String("addr", "", "address to use")
 
 	viper.BindPFlags(RootCmd.PersistentFlags())
