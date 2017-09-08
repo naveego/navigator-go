@@ -81,15 +81,17 @@ var benchmarkCmd = &cobra.Command{
 		// fmt.Println()
 
 		counterKey := request.Shape.Keys[0]
-		counter := request.DataPoint.Data[counterKey].(int)
+		counter := viper.GetInt("benchmark.seed")
+
 		max := counter + reps
 
 		fmt.Printf("beginning with %s set to %d", counterKey, counter)
+		fmt.Println()
 
 		startTime := time.Now()
 
 		for ; counter < max; counter++ {
-			fmt.Println(counter)
+			//fmt.Println(counter)
 			request.DataPoint.Data[counterKey] = counter
 
 			_, err = subscriber.ReceiveDataPoint(request)
@@ -110,13 +112,22 @@ var benchmarkCmd = &cobra.Command{
 
 		return nil
 	},
-	PostRun: func(cmd *cobra.Command, args []string) {
+	PostRunE: func(cmd *cobra.Command, args []string) error {
 		if subscriber != nil {
-			_, _ = subscriber.Dispose(protocol.DisposeRequest{})
+			fmt.Println("disposing subscriber")
+			_, err := subscriber.Dispose(protocol.DisposeRequest{})
+			return err
 		}
+		return nil
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(benchmarkCmd)
+
+	benchmarkCmd.Flags().Int("seed", 1, "The initial ID used when generating data points.")
+	benchmarkCmd.Flags().Int("reps", 1, "The number of data points to generate.")
+
+	viper.BindPFlag("benchmark.reps", benchmarkCmd.Flag("reps"))
+	viper.BindPFlag("benchmark.seed", benchmarkCmd.Flag("seed"))
 }

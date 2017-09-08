@@ -4,13 +4,14 @@ benchmark:
   init:
     dataSourceName: "bucket:bucket123!@/vandelay"
   reps: 100
+  seed: 1
   datapointValues:
       - name: DateAvailable
         value:  "2017-10-11"
       - name: ID
-        value: 400
+        value: 900
       - name: Name
-        value: "bench"
+        value: "bench 2"
       - name: Price
         value: 42.3
   shape:
