@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/Sirupsen/logrus"
@@ -26,6 +27,8 @@ func main() {
 
 	logrus.SetLevel(logrus.DebugLevel)
 
+	logrus.WithField("listen-addr", addr).Info("Started console_subscriber")
+
 	srv := server.NewSubscriberServer(addr, &subscriberHandler{})
 
 	err := srv.ListenAndServe()
@@ -35,10 +38,28 @@ func main() {
 }
 
 type subscriberHandler struct {
+	prefix     string
+	fileWriter io.WriteCloser
 }
 
 func (h *subscriberHandler) Init(request protocol.InitRequest) (protocol.InitResponse, error) {
 	logrus.Debugf("Init: %#v", request)
+
+	if request.Settings != nil {
+		h.prefix = request.Settings["prefix"].(string)
+
+		if fileName, ok := request.Settings["file"]; ok && fileName != "" {
+			f, err := os.Create(fileName.(string))
+			if err != nil {
+				return protocol.InitResponse{
+					Success: false,
+					Message: "couldn't open file: " + err.Error(),
+				}, err
+			}
+			h.fileWriter = f
+		}
+
+	}
 
 	return protocol.InitResponse{
 		Success: true,
@@ -80,7 +101,12 @@ func (h *subscriberHandler) DiscoverShapes(request protocol.DiscoverShapesReques
 }
 
 func (h *subscriberHandler) ReceiveDataPoint(request protocol.ReceiveShapeRequest) (protocol.ReceiveShapeResponse, error) {
-	logrus.Debugf("ReceiveDataPoint: %#v", request)
+	logrus.WithField("prefix", h.prefix).Debugf("ReceiveDataPoint: %#v", request)
+
+	if h.fileWriter != nil {
+		fmt.Fprintf(h.fileWriter, "%s - %#v", h.prefix, request.DataPoint)
+		fmt.Fprintln(h.fileWriter)
+	}
 
 	return protocol.ReceiveShapeResponse{
 		Success: true,
@@ -89,6 +115,10 @@ func (h *subscriberHandler) ReceiveDataPoint(request protocol.ReceiveShapeReques
 
 func (h *subscriberHandler) Dispose(request protocol.DisposeRequest) (protocol.DisposeResponse, error) {
 	logrus.Debugf("Dispose: %#v", request)
+
+	if h.fileWriter != nil {
+		_ = h.fileWriter.Close()
+	}
 
 	return protocol.DisposeResponse{
 		Success: true,

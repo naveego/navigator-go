@@ -63,7 +63,7 @@ func (srv *SubscriberServer) Serve(listener net.Listener) error {
 		wrapper := &wrapper{subscriber: srv.handler}
 		server.RegisterName("Subscriber", wrapper)
 		codec := jsonrpc.NewServerCodec(conn)
-		server.ServeCodec(codec)
+		go server.ServeCodec(codec)
 	}
 }
 

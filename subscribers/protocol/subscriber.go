@@ -49,10 +49,8 @@ type DisposeResponse struct {
 }
 
 type ReceiveShapeRequest struct {
-	SubscriberInstance pipeline.SubscriberInstance `json:"instance" mapstructure:"instance"`
-	Pipeline           pipeline.Pipeline           `json:"pipeline" mapstructure:"pipeline"`
-	Shape              pipeline.ShapeDefinition    `json:"shape" mapstructure:"shape"`
-	DataPoint          pipeline.DataPoint          `json:"data" mapstructure:"data"`
+	Shape     pipeline.ShapeDefinition `json:"shape" mapstructure:"shape"`
+	DataPoint pipeline.DataPoint       `json:"data" mapstructure:"data"`
 }
 
 type ReceiveShapeResponse struct {

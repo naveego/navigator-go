@@ -69,7 +69,7 @@ func (srv *PublisherServer) Serve(listener net.Listener) error {
 		wrapper := &wrapper{publisher: srv.handler}
 		server.RegisterName("Publisher", wrapper)
 		codec := jsonrpc.NewServerCodec(conn)
-		server.ServeCodec(codec)
+		go server.ServeCodec(codec)
 	}
 }
 

@@ -1,0 +1,38 @@
+#subscriber-path: "console_subscriber.exe"
+addr: "tcp://:50001"
+benchmark:
+  init:
+    dataSourceName: "bucket:bucket123!@/vandelay"
+  reps: 100
+  seed: 1
+  data:
+      - name: DateAvailable
+        value:  "2017-10-11"
+      - name: ID
+        value: 900
+      - name: Name
+        value: "bench 3"
+      - name: SKU
+        value: "alpha"
+      # - name: Price
+      #   value: 42.7
+      # - name: Size
+      #   value: "Big"  
+      # - name: Color
+      #   value: "Blue"
+  datapoint:
+    source: Test
+    entity: Items
+    shape:
+      keyNames:
+        - ID
+        - SKU
+      properties:
+        - "DateAvailable:date"
+        - "ID:integer"
+        - "Name:string"
+        - "SKU:string"
+        # - "Price:float"
+        # - "Size:string"
+        # - "Color:string"
+      

@@ -1,16 +1,11 @@
 package protocol
 
 import (
-	pubapi "github.com/naveego/api/pipeline/publisher"
 	"github.com/naveego/api/types/pipeline"
 )
 
-type InitializePublisherRequest struct {
-	Publisher pipeline.PublisherInstance
-}
-
 type DiscoverShapesRequest struct {
-	PublisherInstance pipeline.PublisherInstance `json:"instance" mapstructure:"instance"`
+	Settings map[string]interface{} `json:"settings"`
 }
 
 type DiscoverShapesResponse struct {
@@ -35,9 +30,8 @@ type ConnectionTester interface {
 }
 
 type PublishRequest struct {
-	PublisherInstance pipeline.PublisherInstance `json:"instance" mapstructure:"instance"`
-	PublishedShape    pipeline.ShapeDefinition   `json:"shape" mapstructure:"shape"`
-	PublishToAddress  string                     `json:"publishToAddress" mapstructure:"publishToAddress"`
+	ShapeName        string `json:"shapeName"`
+	PublishToAddress string `json:"publishToAddress" mapstructure:"publishToAddress"`
 }
 
 type PublishResponse struct {
@@ -46,9 +40,44 @@ type PublishResponse struct {
 }
 
 type DataPublisher interface {
-	Publish(request PublishRequest, transport pubapi.DataTransport)
+	Init(InitRequest) (InitResponse, error)
+	Dispose(DisposeRequest) (DisposeResponse, error)
+	Publish(request PublishRequest, toClient PublisherClient) (PublishResponse, error)
 }
 
 type PublishDataNotification struct {
 	DataPoints []pipeline.DataPoint `json:"data_points" mapstructure:"data_points"`
 }
+
+type InitRequest struct {
+	Settings map[string]interface{} `json:"settings"`
+}
+
+type InitResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type DisposeRequest struct{}
+type DisposeResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// PublisherClient is the interface the publisher sends data points to.
+type PublisherClient interface {
+	// SendDataPoints sends data points to the client.
+	SendDataPoints(sendRequest SendDataPointsRequest) (SendDataPointsResponse, error)
+	// Done tells the client that the publisher is done sending data points for now.
+	Done(DoneRequest) (DoneResponse, error)
+}
+
+type SendDataPointsRequest struct {
+	DataPoints []pipeline.DataPoint
+}
+
+type SendDataPointsResponse struct {
+}
+type DoneRequest struct{}
+
+type DoneResponse struct{}
