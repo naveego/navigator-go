@@ -5,6 +5,8 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
+	"github.com/Sirupsen/logrus"
+	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 )
 
@@ -42,6 +44,7 @@ func (p *publisherProxy) TestConnection(request protocol.TestConnectionRequest) 
 	err = p.client.Call("Publisher.TestConnection", request, &resp)
 	return
 }
+
 
 func (p *publisherProxy) Init(request protocol.InitRequest) (resp protocol.InitResponse, err error) {
 	err = p.client.Call("Publisher.Init", request, &resp)

@@ -38,7 +38,7 @@ func (w *wrapper) TestConnection(request protocol.TestConnectionRequest, respons
 }
 
 func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.PublishResponse) (err error) {
-
+	logrus.Info("Calling Publish")
 	*response = protocol.PublishResponse{
 		Success: false,
 	}
@@ -52,7 +52,6 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 		// to the pipeline.
 
 		logrus.Debugf("PublishToAddress was %s", request.PublishToAddress)
-
 		conn, err := DefaultConnectionFactory(request.PublishToAddress)
 		if err != nil {
 			return err
@@ -65,7 +64,10 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 		}
 
 		// Now it's up to the publisher to go off and pump the datapoints.
-		go s.Publish(request, transport)
+		go func() {
+			defer conn.Close()
+			s.Publish(request, transport)
+		}()
 
 		// We respond that we started the publisher.
 		*response = protocol.PublishResponse{
