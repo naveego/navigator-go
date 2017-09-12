@@ -1,15 +1,16 @@
 package server
 
 import (
-	"fmt"
+	"io"
 	"net"
 	"net/rpc"
 	"net/rpc/jsonrpc"
-	"net/url"
+	"strings"
+	"time"
 
+	winio "github.com/Microsoft/go-winio"
 	"github.com/Sirupsen/logrus"
 
-	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 )
 
@@ -51,11 +52,8 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 		// to the pipeline.
 
 		logrus.Debugf("PublishToAddress was %s", request.PublishToAddress)
-		publishToURL, err := url.Parse(request.PublishToAddress)
-		if err != nil {
-			return fmt.Errorf("PublishToAddress '%s' was malformed: %s", err)
-		}
-		conn, err := net.Dial("tcp", publishToURL.Host)
+
+		conn, err := DefaultConnectionFactory(request.PublishToAddress)
 		if err != nil {
 			return err
 		}
@@ -74,7 +72,15 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 			Success: true,
 			Message: "Publisher started.",
 		}
+	} else {
+
+		// We respond that we started the publisher.
+		*response = protocol.PublishResponse{
+			Success: false,
+			Message: "Handler doesn't implement DataPublisher.",
+		}
 	}
+
 	return nil
 }
 
@@ -82,9 +88,36 @@ type jsonrpcDataTransport struct {
 	client *rpc.Client
 }
 
-func (dt *jsonrpcDataTransport) Send(dataPoints []pipeline.DataPoint) error {
+func (dt *jsonrpcDataTransport) SendDataPoints(request protocol.SendDataPointsRequest) (resp protocol.SendDataPointsResponse, err error) {
 
-	err := dt.client.Call("DataPointCollector.ReceiveDataPoints", dataPoints, nil)
+	err = dt.client.Call("PublisherClient.SendDataPoints", request, &resp)
 
-	return err
+	return
 }
+
+func (dt *jsonrpcDataTransport) Done(request protocol.DoneRequest) (resp protocol.DoneResponse, err error) {
+
+	err = dt.client.Call("PublisherClient.Done", request, &resp)
+
+	return
+}
+
+var DefaultConnectionFactory ConnectionFactory = func(addr string) (io.ReadWriteCloser, error) {
+	timeout := time.Second * 5
+	proto := "tcp"
+	p := strings.Index(addr, "://")
+	if p != -1 {
+		proto = addr[:p]
+		addr = addr[p+3:]
+	}
+
+	if proto == "namedpipes" {
+		return winio.DialPipe(addr, &timeout)
+	}
+
+	return net.DialTimeout(proto, addr, timeout)
+
+}
+
+// ConnectionFactory creates a connection from an address.
+type ConnectionFactory func(addr string) (io.ReadWriteCloser, error)

@@ -5,7 +5,6 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
-	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 )
 
@@ -17,17 +16,18 @@ type publisherProxy struct {
 type PublisherProxy interface {
 	protocol.ShapeDiscoverer
 	protocol.ConnectionTester
-	Publish(instance pipeline.PublisherInstance, shape pipeline.ShapeDefinition) error
+	Init(protocol.InitRequest) (protocol.InitResponse, error)
+	Dispose(protocol.DisposeRequest) (protocol.DisposeResponse, error)
+	Publish(protocol.PublishRequest) (protocol.PublishResponse, error)
 }
 
 // NewPublisher returns a protocol.Publisher proxy which
 // communicates with a real publisher over the provided connection.
 // The publisher must own the connection and must not be shared between goroutines.
-func NewPublisher(conn io.ReadWriteCloser, replyToAddr string) (PublisherProxy, error) {
+func NewPublisher(conn io.ReadWriteCloser) (PublisherProxy, error) {
 
 	publisherProxy := &publisherProxy{
-		client:      jsonrpc.NewClient(conn),
-		replyToAddr: replyToAddr,
+		client: jsonrpc.NewClient(conn),
 	}
 
 	return publisherProxy, nil
@@ -43,16 +43,16 @@ func (p *publisherProxy) TestConnection(request protocol.TestConnectionRequest) 
 	return
 }
 
-func (p *publisherProxy) Publish(instance pipeline.PublisherInstance, shape pipeline.ShapeDefinition) error {
-	dummy := protocol.PublishResponse{}
+func (p *publisherProxy) Init(request protocol.InitRequest) (resp protocol.InitResponse, err error) {
+	err = p.client.Call("Publisher.Init", request, &resp)
+	return
+}
+func (p *publisherProxy) Dispose(request protocol.DisposeRequest) (resp protocol.DisposeResponse, err error) {
+	err = p.client.Call("Publisher.Dispose", request, &resp)
+	return
+}
 
-	request := protocol.PublishRequest{
-		PublishedShape:    shape,
-		PublisherInstance: instance,
-		PublishToAddress:  p.replyToAddr,
-	}
-
-	err := p.client.Call("Publisher.Publish", request, &dummy)
-
-	return err
+func (p *publisherProxy) Publish(request protocol.PublishRequest) (resp protocol.PublishResponse, err error) {
+	err = p.client.Call("Publisher.Publish", request, &resp)
+	return
 }

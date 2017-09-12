@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/naveego/api/pipeline/publisher"
 	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
@@ -76,29 +75,51 @@ func (h *publisherHandler) DiscoverShapes(request protocol.DiscoverShapesRequest
 		},
 	}, nil
 }
-func (h *publisherHandler) Publish(request protocol.PublishRequest, transport publisher.DataTransport) {
-	logrus.Debugf("Publish:\r\n  request: %#v\r\n  transport: %#v", request, transport)
 
-	for i := 0; i < *times; i++ {
-		dp := pipeline.DataPoint{
-			Repository: "vandelay",
-			Entity:     "item",
-			Source:     "test",
-			Action:     pipeline.DataPointUpsert,
-			KeyNames:   []string{"id"},
-			Data: map[string]interface{}{
-				"id":   i,
-				"name": "John Doe",
-			},
+func (h *publisherHandler) Init(protocol.InitRequest) (protocol.InitResponse, error) {
+	return protocol.InitResponse{
+		Success: true,
+		Message: "Initialized",
+	}, nil
+}
+
+func (h *publisherHandler) Dispose(protocol.DisposeRequest) (protocol.DisposeResponse, error) {
+	return protocol.DisposeResponse{
+		Success: true,
+		Message: "Disposed",
+	}, nil
+}
+
+func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient protocol.PublisherClient) (protocol.PublishResponse, error) {
+	logrus.Debugf("Publish:\r\n  request: %#v\r\n  transport: %#v", request, toClient)
+
+	go func() {
+		for i := 0; i < *times; i++ {
+			dp := pipeline.DataPoint{
+				Repository: "vandelay",
+				Entity:     "item",
+				Source:     "test",
+				Action:     pipeline.DataPointUpsert,
+				KeyNames:   []string{"id"},
+				Data: map[string]interface{}{
+					"id":   i,
+					"name": "John Doe",
+				},
+			}
+
+			logrus.Debugf("Publishing (%s of %s): %#v", i, times, dp)
+
+			toClient.SendDataPoints(protocol.SendDataPointsRequest{DataPoints: []pipeline.DataPoint{dp}})
+
+			logrus.Debugf("Sleeping for %s", *interval)
+
+			time.Sleep(*interval)
 		}
+	}()
 
-		logrus.Debugf("Publishing (%s of %s): %#v", i, times, dp)
-
-		transport.Send([]pipeline.DataPoint{dp})
-
-		logrus.Debugf("Sleeping for %s", *interval)
-
-		time.Sleep(*interval)
-	}
+	return protocol.PublishResponse{
+		Success: true,
+		Message: fmt.Sprintf("Expect %d items", *times),
+	}, nil
 
 }
