@@ -5,53 +5,49 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/naveego/api/types/pipeline"
+	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
 )
 
 type DataPointCollector struct {
-	addr     string
-	listener net.Listener
-	receiver *DataPointReceiver
+	addr         string
+	clientServer publisherClientServer
 }
 
-type DataPointReceiver struct {
-	handler func([]pipeline.DataPoint) error
-}
-
-func NewDataPointCollector(addr string, handler func([]pipeline.DataPoint) error) (DataPointCollector, error) {
+func NewDataPointCollector(addr string) (DataPointCollector, error) {
 
 	collector := DataPointCollector{
-		addr:     addr,
-		receiver: &DataPointReceiver{handler},
+		addr: addr,
 	}
 
 	return collector, nil
 }
 
 // Start starts a goroutine which will accept datapoints over the collector's address.
-func (d *DataPointCollector) Start() error {
+// The collector will listen on the address provided to NewDataPointCollector.
+// The JSON-RPC method prefix is "PublisherClient.".
+func (d *DataPointCollector) Start(output chan<- []pipeline.DataPoint) error {
 
-	logrus.Debugf("Starting Data Point Collector on %s", d.addr)
 	listener, err := server.OpenListener(d.addr)
 	if err != nil {
 		return err
 	}
 
-	d.listener = listener
-
 	go func() {
 		for {
-			logrus.Debug("Listening for connections")
 			conn, err := listener.Accept()
 			if err != nil {
 				return
 			}
 
-			logrus.Debug("Accepting Connection")
+			d.clientServer = publisherClientServer{
+				output:   output,
+				listener: listener,
+			}
+
 			server := rpc.NewServer()
-			server.RegisterName("DataPointCollector", d.receiver)
+			server.RegisterName("PublisherClient", &d.clientServer)
 
 			codec := jsonrpc.NewServerCodec(conn)
 
@@ -62,18 +58,30 @@ func (d *DataPointCollector) Start() error {
 	return nil
 }
 
-// ReceiveDataPoints accepts JSON-RPC calls from the publisher and passes them to the data collector's handler.
-func (d *DataPointReceiver) ReceiveDataPoints(datapoints []pipeline.DataPoint, ok *bool) error {
-	err := d.handler(datapoints)
-	*ok = true
-	if err != nil {
-		//d.Stop()
-		return err
-	}
+func (d *DataPointCollector) Stop() {
+	var response protocol.DoneResponse
+	_ = d.clientServer.Done(protocol.DoneRequest{}, &response)
+}
+
+type publisherClientServer struct {
+	listener net.Listener
+	output   chan<- []pipeline.DataPoint
+}
+
+// SendDataPoints accepts JSON-RPC calls from the publisher and passes them to the data collector's handler.
+func (d *publisherClientServer) SendDataPoints(sendRequest protocol.SendDataPointsRequest, response *protocol.SendDataPointsResponse) error {
+
+	*response = protocol.SendDataPointsResponse{}
+
+	d.output <- sendRequest.DataPoints
+
 	return nil
 }
 
-// Stop stops the collector.
-func (d *DataPointCollector) Stop() {
+// Done stops the collector.
+func (d *publisherClientServer) Done(doneRequest protocol.DoneRequest, response *protocol.DoneResponse) error {
 	d.listener.Close()
+	close(d.output)
+	*response = protocol.DoneResponse{}
+	return nil
 }

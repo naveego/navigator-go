@@ -10,7 +10,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/maraino/go-mock"
-	pubapi "github.com/naveego/api/pipeline/publisher"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
 	. "github.com/smartystreets/goconvey/convey"
@@ -37,23 +36,47 @@ type mockHandler struct {
 	mock.Mock
 }
 
-func (m *mockHandler) Publish(request protocol.PublishRequest, transport pubapi.DataTransport) {
-	m.Called(request, transport)
+func (m *mockHandler) Init(request protocol.InitRequest) (protocol.InitResponse, error) {
+	m.Called(request)
+	return protocol.InitResponse{Success: true}, nil
+}
 
-	transport.Send([]pipeline.DataPoint{
-		{
-			Repository: "vandelay",
-			Entity:     "item",
-			Source:     "test",
-			Action:     pipeline.DataPointUpsert,
-			KeyNames:   []string{"id"},
-			Data: map[string]interface{}{
-				"id":   1,
-				"name": "John Doe",
-				"dob":  "1990-01-01T12:00:00Z",
+func (m *mockHandler) Dispose(request protocol.DisposeRequest) (protocol.DisposeResponse, error) {
+	m.Called(request)
+	return protocol.DisposeResponse{Success: true}, nil
+}
+
+func (m *mockHandler) Publish(request protocol.PublishRequest, toClient protocol.PublisherClient) (protocol.PublishResponse, error) {
+	m.Called(request, toClient)
+
+	go func() {
+		_, err := toClient.SendDataPoints(protocol.SendDataPointsRequest{
+			DataPoints: []pipeline.DataPoint{
+				{
+					Repository: "vandelay",
+					Entity:     "item",
+					Source:     "test",
+					Action:     pipeline.DataPointUpsert,
+					KeyNames:   []string{"id"},
+					Data: map[string]interface{}{
+						"id":   1,
+						"name": "John Doe",
+						"dob":  "1990-01-01T12:00:00Z",
+					},
+				},
 			},
-		},
-	})
+		})
+
+		if err != nil {
+			panic(err)
+		}
+
+	}()
+
+	return protocol.PublishResponse{
+		Success: true,
+	}, nil
+
 }
 
 func (m *mockHandler) TestConnection(request protocol.TestConnectionRequest) (protocol.TestConnectionResponse, error) {
@@ -65,7 +88,7 @@ var (
 	mockHandlerInstance = &mockHandler{}
 	publisherAddr       = "tcp://127.0.0.1:51001"
 	collectorAddr       = "tcp://127.0.0.1:51002"
-	output              = make(chan []pipeline.DataPoint, 100)
+	output              <-chan []pipeline.DataPoint
 )
 
 func init() {
@@ -79,16 +102,13 @@ func init() {
 		}
 	}()
 
-	collector, err := NewDataPointCollector(collectorAddr, func(d []pipeline.DataPoint) error {
-		output <- d
-		return nil
-	})
+	collector, err := NewDataPointCollector(collectorAddr)
 
 	if err != nil {
 		panic(err.Error())
 	}
 
-	collector.Start()
+	output, err = collector.Start()
 
 }
 
@@ -104,7 +124,7 @@ func Test_publisherProxy_TestConnection(t *testing.T) {
 
 		conn, err := net.Dial("tcp", strings.Split(publisherAddr, "://")[1])
 
-		sut, err := NewPublisher(conn, collectorAddr)
+		sut, err := NewPublisher(conn)
 
 		actual, err := sut.TestConnection(protocol.TestConnectionRequest{
 			Settings: map[string]interface{}{},
@@ -132,18 +152,18 @@ func Test_publisherProxy_ReceiveDataPoint(t *testing.T) {
 		var err error
 		var sut PublisherProxy
 		conn, err := net.Dial("tcp", strings.Split(publisherAddr, "://")[1])
+		defer conn.Close()
 
-		sut, err = NewPublisher(conn, collectorAddr)
+		sut, err = NewPublisher(conn)
 
 		Convey("proxy method should not have error", nil)
-		err = sut.Publish(pipeline.PublisherInstance{
-			Description: "d",
-			Name:        "n",
-			Settings:    map[string]interface{}{},
-			Shapes:      pipeline.ShapeDefinitions{},
-		}, pipeline.ShapeDefinition{})
+		resp, err := sut.Publish(protocol.PublishRequest{
+			PublishToAddress: collectorAddr,
+			ShapeName:        "test",
+		})
 
 		So(err, ShouldBeNil)
+		So(resp.Success, ShouldBeTrue)
 
 		Convey("method in publisher should have been called", nil)
 		ok, err := mockHandlerInstance.Verify()
@@ -153,16 +173,12 @@ func Test_publisherProxy_ReceiveDataPoint(t *testing.T) {
 		Convey("collector should receive data point from publisher", nil)
 
 		timeout := time.After(time.Millisecond * 100)
-
 		select {
 		case <-output:
 			So(true, ShouldBeTrue)
 		case <-timeout:
 			So(false, ShouldBeTrue)
 		}
-
-		defer conn.Close()
-
 	})
 }
 
@@ -171,7 +187,7 @@ func TestNewSubscriber(t *testing.T) {
 	Convey("Given a connection", t, func() {
 		conn := mockConn{}
 		Convey("should create a publisher", func() {
-			got, err := NewPublisher(&conn, collectorAddr)
+			got, err := NewPublisher(&conn)
 			So(err, ShouldBeNil)
 			So(got, ShouldNotBeNil)
 		})
