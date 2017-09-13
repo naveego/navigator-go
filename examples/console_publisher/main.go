@@ -12,11 +12,6 @@ import (
 	"github.com/naveego/navigator-go/publishers/server"
 )
 
-var (
-	interval = flag.Duration("interval", time.Second, "duration defining interval between publishes")
-	times    = flag.Int("times", 10, "int defining number of publishes to do")
-)
-
 func main() {
 
 	logrus.SetOutput(os.Stdout)
@@ -41,6 +36,9 @@ func main() {
 }
 
 type publisherHandler struct {
+	inited   bool
+	count    int
+	interval time.Duration
 }
 
 func (h *publisherHandler) TestConnection(request protocol.TestConnectionRequest) (protocol.TestConnectionResponse, error) {
@@ -76,14 +74,42 @@ func (h *publisherHandler) DiscoverShapes(request protocol.DiscoverShapesRequest
 	}, nil
 }
 
-func (h *publisherHandler) Init(protocol.InitRequest) (protocol.InitResponse, error) {
+func (h *publisherHandler) Init(request protocol.InitRequest) (protocol.InitResponse, error) {
+	var err error
+
+	h.count, _ = request.Settings["count"].(int)
+	intervalString := request.Settings["interval"].(string)
+	if intervalString != "" {
+		h.interval, err = time.ParseDuration(intervalString)
+		if err != nil {
+			return protocol.InitResponse{
+				Success: false,
+				Message: "Invalid interval in settings.",
+			}, err
+		}
+	}
+
+	if h.count > 0 && h.interval > 0 {
+		h.inited = true
+
+		return protocol.InitResponse{
+			Success: true,
+			Message: fmt.Sprintf("Initialized. Will send %d items with an interval of %.2f seconds.", h.count, h.interval.Seconds()),
+		}, nil
+
+	}
 	return protocol.InitResponse{
-		Success: true,
-		Message: "Initialized",
-	}, nil
+		Success: false,
+		Message: "Invalid count or interval in settings.",
+	}, fmt.Errorf("invalid count or interval in settings: count=%v, interval=%v", h.count, h.interval)
 }
 
 func (h *publisherHandler) Dispose(protocol.DisposeRequest) (protocol.DisposeResponse, error) {
+
+	h.inited = false
+	h.count = 0
+	h.interval = time.Duration(0)
+
 	return protocol.DisposeResponse{
 		Success: true,
 		Message: "Disposed",
@@ -94,7 +120,7 @@ func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient pro
 	logrus.Debugf("Publish:\r\n  request: %#v\r\n  transport: %#v", request, toClient)
 
 	go func() {
-		for i := 0; i < *times; i++ {
+		for i := 0; i < h.count; i++ {
 			dp := pipeline.DataPoint{
 				Repository: "vandelay",
 				Entity:     "item",
@@ -107,19 +133,19 @@ func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient pro
 				},
 			}
 
-			logrus.Debugf("Publishing (%s of %s): %#v", i, times, dp)
+			logrus.Debugf("Publishing (%s of %s): %#v", i, h.count, dp)
 
 			toClient.SendDataPoints(protocol.SendDataPointsRequest{DataPoints: []pipeline.DataPoint{dp}})
 
-			logrus.Debugf("Sleeping for %s", *interval)
+			logrus.Debugf("Sleeping for %.2f seconds", h.interval.Seconds())
 
-			time.Sleep(*interval)
+			time.Sleep(h.interval)
 		}
 	}()
 
 	return protocol.PublishResponse{
 		Success: true,
-		Message: fmt.Sprintf("Expect %d items", *times),
+		Message: fmt.Sprintf("Expect %d items", h.count),
 	}, nil
 
 }
