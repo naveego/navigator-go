@@ -68,7 +68,7 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 		// back to the publication manager for dispatch
 		// to the pipeline.
 
-		logrus.Debugf("PublishToAddress was %s", request.PublishToAddress)
+		logrus.Infof("PublishToAddress was %s", request.PublishToAddress)
 		conn, err := DefaultConnectionFactory(request.PublishToAddress)
 		if err != nil {
 			return err
@@ -108,7 +108,7 @@ type jsonrpcDataTransport struct {
 }
 
 func (dt *jsonrpcDataTransport) SendDataPoints(request protocol.SendDataPointsRequest) (resp protocol.SendDataPointsResponse, err error) {
-
+	logrus.Debugf("Calling PublisherClient.SendDataPoints on JSON RPC Client")
 	err = dt.client.Call("PublisherClient.SendDataPoints", request, &resp)
 
 	return
