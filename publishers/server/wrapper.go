@@ -108,9 +108,7 @@ type jsonrpcDataTransport struct {
 }
 
 func (dt *jsonrpcDataTransport) SendDataPoints(request protocol.SendDataPointsRequest) (resp protocol.SendDataPointsResponse, err error) {
-	logrus.Debugf("Calling PublisherClient.SendDataPoints on JSON RPC Client")
 	err = dt.client.Call("PublisherClient.SendDataPoints", request, &resp)
-
 	return
 }
 
