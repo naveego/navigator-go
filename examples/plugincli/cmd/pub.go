@@ -52,6 +52,14 @@ var pubCmd = &cobra.Command{
 
 		go func() {
 			for {
+
+				if publisher == nil {
+					connectPublisher()
+					if publisher == nil {
+						panic("couldn't reconnect, dying")
+					}
+				}
+
 				fmt.Fprintln(os.Stdout, " 1: TestConnection")
 				fmt.Fprintln(os.Stdout, " 2: Init")
 				fmt.Fprintln(os.Stdout, " 3: Publish")
@@ -119,8 +127,7 @@ func init() {
 
 func writePublisherResponse(resp interface{}, err error) {
 	if err != nil {
-		fmt.Println("publisher error: ", err)
-		connectSubscriber()
+		fmt.Println("\033[31mpublisher error: \033[0m", err)
 	}
 
 	fmt.Print("\033[32mResponse:\033[0m")

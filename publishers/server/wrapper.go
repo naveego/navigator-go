@@ -37,6 +37,23 @@ func (w *wrapper) TestConnection(request protocol.TestConnectionRequest, respons
 	return nil
 }
 
+func (w *wrapper) Init(request protocol.InitRequest, response *protocol.InitResponse) (err error) {
+	if s, ok := w.publisher.(protocol.DataPublisher); ok {
+		r, err := s.Init(request)
+		*response = r
+		return err
+	}
+	return nil
+}
+func (w *wrapper) Dispose(request protocol.DisposeRequest, response *protocol.DisposeResponse) (err error) {
+	if s, ok := w.publisher.(protocol.DataPublisher); ok {
+		r, err := s.Dispose(request)
+		*response = r
+		return err
+	}
+	return nil
+}
+
 func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.PublishResponse) (err error) {
 	logrus.Info("Calling Publish")
 	*response = protocol.PublishResponse{
