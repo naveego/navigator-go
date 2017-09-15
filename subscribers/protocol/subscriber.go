@@ -5,11 +5,11 @@ import (
 )
 
 type InitializeSubscriberRequest struct {
-	Publisher pipeline.PublisherInstance
+	Settings map[string]interface{} `json:"settings"`
 }
 
 type DiscoverShapesRequest struct {
-	SubscriberInstance pipeline.SubscriberInstance `json:"instance" mapstructure:"instance"`
+	Settings map[string]interface{} `json:"settings"`
 }
 
 type DiscoverShapesResponse struct {
@@ -34,7 +34,8 @@ type ConnectionTester interface {
 }
 
 type InitRequest struct {
-	Settings map[string]interface{} `json:"settings"`
+	Settings map[string]interface{}  `json:"settings"`
+	Mappings []pipeline.ShapeMapping `json:"mappings"`
 }
 
 type InitResponse struct {
@@ -49,8 +50,8 @@ type DisposeResponse struct {
 }
 
 type ReceiveShapeRequest struct {
-	Shape     pipeline.ShapeDefinition `json:"shape" mapstructure:"shape"`
-	DataPoint pipeline.DataPoint       `json:"data" mapstructure:"data"`
+	ShapeName string             `json:"shape_name" mapstructure:"shape"`
+	DataPoint pipeline.DataPoint `json:"data" mapstructure:"data"`
 }
 
 type ReceiveShapeResponse struct {
