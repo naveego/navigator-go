@@ -74,23 +74,15 @@ func (w *wrapper) Publish(request protocol.PublishRequest, response *protocol.Pu
 			return err
 		}
 
+		// Now it's up to the publisher to go off and pump the datapoints.
 		client := jsonrpc.NewClient(conn)
 
 		transport := &jsonrpcDataTransport{
 			client: client,
 		}
 
-		// Now it's up to the publisher to go off and pump the datapoints.
-		go func() {
-			defer conn.Close()
-			s.Publish(request, transport)
-		}()
+		*response, err = s.Publish(request, transport)
 
-		// We respond that we started the publisher.
-		*response = protocol.PublishResponse{
-			Success: true,
-			Message: "Publisher started.",
-		}
 	} else {
 
 		// We respond that we started the publisher.
@@ -115,6 +107,8 @@ func (dt *jsonrpcDataTransport) SendDataPoints(request protocol.SendDataPointsRe
 func (dt *jsonrpcDataTransport) Done(request protocol.DoneRequest) (resp protocol.DoneResponse, err error) {
 
 	err = dt.client.Call("PublisherClient.Done", request, &resp)
+
+	dt.client.Close()
 
 	return
 }
