@@ -19,6 +19,7 @@ type PublisherProxy interface {
 	Init(protocol.InitRequest) (protocol.InitResponse, error)
 	Dispose(protocol.DisposeRequest) (protocol.DisposeResponse, error)
 	Publish(protocol.PublishRequest) (protocol.PublishResponse, error)
+	Close() error
 }
 
 // NewPublisher returns a protocol.Publisher proxy which
@@ -31,6 +32,9 @@ func NewPublisher(conn io.ReadWriteCloser) (PublisherProxy, error) {
 	}
 
 	return publisherProxy, nil
+}
+func (p *publisherProxy) Close() (err error) {
+	return p.client.Close()
 }
 
 func (p *publisherProxy) DiscoverShapes(request protocol.DiscoverShapesRequest) (resp protocol.DiscoverShapesResponse, err error) {

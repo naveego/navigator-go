@@ -49,6 +49,7 @@ var pubCmd = &cobra.Command{
 		<-time.After(time.Second * 1)
 
 		connectPublisher()
+		connectDataPointCollector()
 
 		go func() {
 			for {
@@ -128,6 +129,7 @@ func init() {
 func writePublisherResponse(resp interface{}, err error) {
 	if err != nil {
 		fmt.Println("\033[31mpublisher error: \033[0m", err)
+		connectPublisher()
 	}
 
 	fmt.Print("\033[32mResponse:\033[0m")
@@ -150,15 +152,25 @@ func connectPublisher() {
 	var err error
 	fmt.Println("connecting...")
 
+	if publisher != nil {
+		err = publisher.Close()
+		check(err)
+	}
+
 	if publisherConn != nil {
 		publisherConn.Close()
-
 	}
 
-	if datapointCollector != nil {
-		datapointCollector.Stop()
-	}
+	publisherConn, err = DefaultConnectionFactory(viper.GetString("addr"))
+	check(err)
 
+	publisher, err = client.NewPublisher(publisherConn)
+	check(err)
+
+	fmt.Println("connected")
+}
+
+func connectDataPointCollector() {
 	listenAddr := viper.GetString("listen-addr")
 
 	datapointCollector, err := client.NewDataPointCollector(listenAddr)
@@ -173,14 +185,6 @@ func connectPublisher() {
 			fmt.Println("Got message: ", msg)
 		}
 	}()
-
-	publisherConn, err = DefaultConnectionFactory(viper.GetString("addr"))
-	check(err)
-
-	publisher, err = client.NewPublisher(publisherConn)
-	check(err)
-
-	fmt.Println("connected")
 }
 
 type dataPointHandler struct {
