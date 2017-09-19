@@ -16,7 +16,7 @@ func main() {
 
 	logrus.SetOutput(os.Stdout)
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 1 {
 		fmt.Println("Not enough arguments.")
 		os.Exit(-1)
 	}
