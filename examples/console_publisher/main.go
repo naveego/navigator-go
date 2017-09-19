@@ -77,7 +77,7 @@ func (h *publisherHandler) DiscoverShapes(request protocol.DiscoverShapesRequest
 func (h *publisherHandler) Init(request protocol.InitRequest) (protocol.InitResponse, error) {
 	var err error
 
-	h.count, _ = request.Settings["count"].(int)
+	h.count = int(request.Settings["count"].(float64))
 	intervalString := request.Settings["interval"].(string)
 	if intervalString != "" {
 		h.interval, err = time.ParseDuration(intervalString)
@@ -133,7 +133,7 @@ func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient pro
 				},
 			}
 
-			logrus.Debugf("Publishing (%s of %s): %#v", i, h.count, dp)
+			logrus.Debugf("Publishing (%v of %v): %#v", i, h.count, dp)
 
 			toClient.SendDataPoints(protocol.SendDataPointsRequest{DataPoints: []pipeline.DataPoint{dp}})
 
