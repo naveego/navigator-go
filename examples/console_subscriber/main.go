@@ -16,7 +16,7 @@ func main() {
 
 	logrus.SetOutput(os.Stdout)
 
-	if len(os.Args) < 1 {
+	if len(os.Args) < 2 {
 		fmt.Println("Not enough arguments.")
 		os.Exit(-1)
 	}
@@ -101,7 +101,7 @@ func (h *subscriberHandler) DiscoverShapes(request protocol.DiscoverShapesReques
 }
 
 func (h *subscriberHandler) ReceiveDataPoint(request protocol.ReceiveShapeRequest) (protocol.ReceiveShapeResponse, error) {
-	logrus.WithField("prefix", h.prefix).Debugf("ReceiveDataPoint: %#v", request)
+	logrus.WithField("prefix", h.prefix).WithField("datapoint", request.DataPoint).Info(color(42, "Received DataPoint"))
 
 	if h.fileWriter != nil {
 		fmt.Fprintf(h.fileWriter, "%s - %#v", h.prefix, request.DataPoint)
@@ -123,4 +123,8 @@ func (h *subscriberHandler) Dispose(request protocol.DisposeRequest) (protocol.D
 	return protocol.DisposeResponse{
 		Success: true,
 	}, nil
+}
+
+func color(code int, s string) string {
+	return fmt.Sprintf("\033[%dm%s\033[0m", code, s)
 }

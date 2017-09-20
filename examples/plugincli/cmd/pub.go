@@ -182,7 +182,8 @@ func connectDataPointCollector() {
 
 	go func() {
 		for msg := range publishedDataPoints {
-			fmt.Println("Got message: ", msg)
+			fmt.Printf("Got message: %#v", msg)
+			fmt.Println()
 		}
 	}()
 }
