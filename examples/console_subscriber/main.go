@@ -6,10 +6,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/subscribers/protocol"
 	"github.com/naveego/navigator-go/subscribers/server"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {

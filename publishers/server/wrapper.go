@@ -9,7 +9,7 @@ import (
 	"time"
 
 	winio "github.com/Microsoft/go-winio"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/naveego/navigator-go/publishers/protocol"
 )
