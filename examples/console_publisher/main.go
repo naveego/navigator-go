@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/satori/go.uuid"
+
 	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
@@ -16,7 +18,7 @@ func main() {
 
 	logrus.SetOutput(os.Stdout)
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 1 {
 		fmt.Println("Not enough arguments.")
 		os.Exit(-1)
 	}
@@ -77,7 +79,7 @@ func (h *publisherHandler) DiscoverShapes(request protocol.DiscoverShapesRequest
 func (h *publisherHandler) Init(request protocol.InitRequest) (protocol.InitResponse, error) {
 	var err error
 
-	h.count, _ = request.Settings["count"].(int)
+	h.count = int(request.Settings["count"].(float64))
 	intervalString := request.Settings["interval"].(string)
 	if intervalString != "" {
 		h.interval, err = time.ParseDuration(intervalString)
@@ -128,12 +130,13 @@ func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient pro
 				Action:     pipeline.DataPointUpsert,
 				KeyNames:   []string{"id"},
 				Data: map[string]interface{}{
-					"id":   i,
-					"name": "John Doe",
+					"id":     i,
+					"name":   "John Doe",
+					"unique": uuid.NewV4().String(),
 				},
 			}
 
-			logrus.Debugf("Publishing (%s of %s): %#v", i, h.count, dp)
+			logrus.WithField("datapoint", dp).Debugf(color(45, fmt.Sprintf("Publishing (%v of %v)", i, h.count)))
 
 			toClient.SendDataPoints(protocol.SendDataPointsRequest{DataPoints: []pipeline.DataPoint{dp}})
 
@@ -148,4 +151,8 @@ func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient pro
 		Message: fmt.Sprintf("Expect %d items", h.count),
 	}, nil
 
+}
+
+func color(code int, s string) string {
+	return fmt.Sprintf("\033[%dm%s\033[0m", code, s)
 }

@@ -148,7 +148,7 @@ func connectSubscriber() {
 
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("Connection borked (is the plugin running?): ", err)
+			panic(fmt.Sprintf("Connection borked (is the plugin running?): %s", err))
 		}
 	}()
 
