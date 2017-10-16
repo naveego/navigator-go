@@ -128,16 +128,3 @@ func Test_subscriberProxy_ReceiveDataPoint(t *testing.T) {
 	})
 
 }
-
-func TestNewSubscriber(t *testing.T) {
-
-	Convey("Given a connection", t, func() {
-		conn := mockConn{}
-		Convey("should create a subscriber", func() {
-			got, err := NewSubscriber(&conn)
-			So(err, ShouldBeNil)
-			So(got, ShouldNotBeNil)
-		})
-	})
-
-}

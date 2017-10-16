@@ -88,7 +88,7 @@ var (
 	mockHandlerInstance = &mockHandler{}
 	publisherAddr       = "tcp://127.0.0.1:51001"
 	collectorAddr       = "tcp://127.0.0.1:51002"
-	output              <-chan []pipeline.DataPoint
+	output              chan []pipeline.DataPoint
 )
 
 func init() {
@@ -108,7 +108,11 @@ func init() {
 		panic(err.Error())
 	}
 
-	output, err = collector.Start()
+	output = make(chan []pipeline.DataPoint)
+	err = collector.Start(output)
+	if err != nil {
+		panic(err)
+	}
 
 }
 
@@ -180,17 +184,4 @@ func Test_publisherProxy_ReceiveDataPoint(t *testing.T) {
 			So(false, ShouldBeTrue)
 		}
 	})
-}
-
-func TestNewSubscriber(t *testing.T) {
-
-	Convey("Given a connection", t, func() {
-		conn := mockConn{}
-		Convey("should create a publisher", func() {
-			got, err := NewPublisher(&conn)
-			So(err, ShouldBeNil)
-			So(got, ShouldNotBeNil)
-		})
-	})
-
 }
