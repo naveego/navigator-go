@@ -1,14 +1,9 @@
 package server
 
 import (
-	"io"
-	"net"
 	"net/rpc"
 	"net/rpc/jsonrpc"
-	"strings"
-	"time"
 
-	winio "github.com/Microsoft/go-winio"
 	"github.com/Sirupsen/logrus"
 
 	"github.com/naveego/navigator-go/publishers/protocol"
@@ -112,23 +107,3 @@ func (dt *jsonrpcDataTransport) Done(request protocol.DoneRequest) (resp protoco
 
 	return
 }
-
-var DefaultConnectionFactory ConnectionFactory = func(addr string) (io.ReadWriteCloser, error) {
-	timeout := time.Second * 5
-	proto := "tcp"
-	p := strings.Index(addr, "://")
-	if p != -1 {
-		proto = addr[:p]
-		addr = addr[p+3:]
-	}
-
-	if proto == "namedpipes" {
-		return winio.DialPipe(addr, &timeout)
-	}
-
-	return net.DialTimeout(proto, addr, timeout)
-
-}
-
-// ConnectionFactory creates a connection from an address.
-type ConnectionFactory func(addr string) (io.ReadWriteCloser, error)
