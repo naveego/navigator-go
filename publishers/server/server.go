@@ -7,7 +7,7 @@ import (
 	"net/rpc/jsonrpc"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type PublisherServer struct {

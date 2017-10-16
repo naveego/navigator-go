@@ -8,10 +8,10 @@ import (
 
 	"github.com/satori/go.uuid"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
