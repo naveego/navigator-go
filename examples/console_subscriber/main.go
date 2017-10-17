@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -38,7 +39,6 @@ func main() {
 }
 
 type subscriberHandler struct {
-	prefix     string
 	fileWriter io.WriteCloser
 }
 
@@ -46,8 +46,6 @@ func (h *subscriberHandler) Init(request protocol.InitRequest) (protocol.InitRes
 	logrus.Debugf("Init: %#v", request)
 
 	if request.Settings != nil {
-		h.prefix = request.Settings["prefix"].(string)
-
 		if fileName, ok := request.Settings["file"]; ok && fileName != "" {
 			f, err := os.Create(fileName.(string))
 			if err != nil {
@@ -101,11 +99,11 @@ func (h *subscriberHandler) DiscoverShapes(request protocol.DiscoverShapesReques
 }
 
 func (h *subscriberHandler) ReceiveDataPoint(request protocol.ReceiveShapeRequest) (protocol.ReceiveShapeResponse, error) {
-	logrus.WithField("prefix", h.prefix).WithField("datapoint", request.DataPoint).Info(color(42, "Received DataPoint"))
+	logrus.WithField("datapoint", request.DataPoint).Info(color(42, "Received DataPoint"))
 
 	if h.fileWriter != nil {
-		fmt.Fprintf(h.fileWriter, "%s - %#v", h.prefix, request.DataPoint)
-		fmt.Fprintln(h.fileWriter)
+		jsonBytes, _ := json.Marshal(request.DataPoint)
+		fmt.Fprintln(h.fileWriter, string(jsonBytes))
 	}
 
 	return protocol.ReceiveShapeResponse{

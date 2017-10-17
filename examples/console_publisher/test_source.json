@@ -1,0 +1,142 @@
+[
+    {
+      "data": {
+        "unique": "6e230128-acfa-44be-89f1-7b305fe98e0d",
+        "name": "Joan Terry",
+        "id": 0
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "623c68f2-8286-46dc-9e7c-1937915b3c29",
+        "name": "Estrada Robles",
+        "id": 1
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "34bc210a-ee0f-48d1-8ceb-eb3560307a3c",
+        "name": "Geraldine Holmes",
+        "id": 2
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "fceb1428-42f8-4142-a16c-589853a6df8b",
+        "name": "Chelsea Sargent",
+        "id": 3
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "cd779654-374e-4cdc-a966-0aff4e010314",
+        "name": "Imelda Lynch",
+        "id": 4
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "d93949d4-8078-44a0-8883-d119f52aa1e7",
+        "name": "Shelly Houston",
+        "id": 5
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "233c8556-6622-45f4-94aa-6cecb610ba9c",
+        "name": "Teri Lindsey",
+        "id": 6
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "844a18a1-4b45-488c-b273-034a0b8ff7a7",
+        "name": "Bettye Osborn",
+        "id": 7
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "8e0ca03a-8123-4fcc-b301-958991a42460",
+        "name": "Madge Fisher",
+        "id": 8
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    },
+    {
+      "data": {
+        "unique": "de0ae62e-d9b9-4a32-a94c-41640ca68552",
+        "name": "Luz Haney",
+        "id": 9
+      },
+      "keyNames": [
+        "id"
+      ],
+      "action": "upsert",
+      "source": "test",
+      "entity": "item",
+      "repository": "vandelay"
+    }
+  ]

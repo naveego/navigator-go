@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -41,6 +43,7 @@ type publisherHandler struct {
 	inited   bool
 	count    int
 	interval time.Duration
+	filePath string
 }
 
 func (h *publisherHandler) TestConnection(request protocol.TestConnectionRequest) (protocol.TestConnectionResponse, error) {
@@ -79,6 +82,15 @@ func (h *publisherHandler) DiscoverShapes(request protocol.DiscoverShapesRequest
 func (h *publisherHandler) Init(request protocol.InitRequest) (protocol.InitResponse, error) {
 	var err error
 
+	if rawFilePath, hasFilePath := request.Settings["file"]; hasFilePath {
+		h.filePath = rawFilePath.(string)
+		return protocol.InitResponse{
+			Success: true,
+			Message: fmt.Sprintf("Initialized. Will publish lines from '%s'.", h.filePath),
+		}, nil
+
+	}
+
 	h.count = int(request.Settings["count"].(float64))
 	intervalString := request.Settings["interval"].(string)
 	if intervalString != "" {
@@ -108,6 +120,7 @@ func (h *publisherHandler) Init(request protocol.InitRequest) (protocol.InitResp
 
 func (h *publisherHandler) Dispose(protocol.DisposeRequest) (protocol.DisposeResponse, error) {
 
+	h.filePath = ""
 	h.inited = false
 	h.count = 0
 	h.interval = time.Duration(0)
@@ -120,6 +133,46 @@ func (h *publisherHandler) Dispose(protocol.DisposeRequest) (protocol.DisposeRes
 
 func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient protocol.PublisherClient) (protocol.PublishResponse, error) {
 	logrus.Debugf("Publish:\r\n  request: %#v\r\n  transport: %#v", request, toClient)
+
+	if h.filePath != "" {
+
+		fileBytes, err := ioutil.ReadFile(h.filePath)
+		if err != nil {
+			return protocol.PublishResponse{
+				Success: false,
+				Message: fmt.Sprintf("error opening file '%s': %s", h.filePath, err),
+			}, err
+		}
+
+		var dataPoints []pipeline.DataPoint
+
+		err = json.Unmarshal(fileBytes, &dataPoints)
+		if err != nil {
+			return protocol.PublishResponse{
+				Success: false,
+				Message: fmt.Sprintf("error reading file '%s': %s", h.filePath, err),
+			}, err
+		}
+
+		go func() {
+			for i, dp := range dataPoints {
+
+				logrus.WithField("datapoint", dp).Debugf(color(45, fmt.Sprintf("Publishing (%v of %v)", i+1, len(dataPoints))))
+
+				toClient.SendDataPoints(protocol.SendDataPointsRequest{DataPoints: []pipeline.DataPoint{dp}})
+
+				logrus.Debugf("Sleeping for %.2f seconds", h.interval.Seconds())
+
+				time.Sleep(h.interval)
+			}
+		}()
+
+		return protocol.PublishResponse{
+			Success: true,
+			Message: fmt.Sprintf("Expect %d items", len(dataPoints)),
+		}, nil
+
+	}
 
 	go func() {
 		for i := 0; i < h.count; i++ {
