@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 
 	"github.com/naveego/api/types/pipeline"
 	"github.com/naveego/navigator-go/subscribers/protocol"
@@ -32,10 +33,20 @@ func main() {
 
 	srv := server.NewSubscriberServer(addr, &subscriberHandler{})
 
-	err := srv.ListenAndServe()
-	if err != nil {
-		logrus.Fatal("Error shutting down server: ", err)
-	}
+	go func() {
+		err := srv.ListenAndServe()
+		if err != nil {
+			logrus.Fatal("Error shutting down server: ", err)
+		}
+	}()
+
+	signals := make(chan os.Signal)
+	signal.Notify(signals, os.Interrupt, os.Kill)
+	fmt.Println("CTRL-C to close")
+
+	<-signals
+
+	fmt.Println("Shutting down.")
 }
 
 type subscriberHandler struct {

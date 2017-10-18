@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/satori/go.uuid"
@@ -33,10 +34,20 @@ func main() {
 
 	srv := server.NewPublisherServer(addr, &publisherHandler{})
 
-	err := srv.ListenAndServe()
-	if err != nil {
-		logrus.Fatal("Error shutting down server: ", err)
-	}
+	go func() {
+		err := srv.ListenAndServe()
+		if err != nil {
+			logrus.Fatal("Error shutting down server: ", err)
+		}
+	}()
+
+	signals := make(chan os.Signal)
+	signal.Notify(signals, os.Interrupt, os.Kill)
+	fmt.Println("CTRL-C to close")
+
+	<-signals
+
+	fmt.Println("Shutting down.")
 }
 
 type publisherHandler struct {
