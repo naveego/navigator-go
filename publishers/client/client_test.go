@@ -8,7 +8,7 @@ import (
 
 	"github.com/naveego/api/types/pipeline"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/maraino/go-mock"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"

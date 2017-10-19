@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/naveego/navigator-go/subscribers/protocol"
 	"github.com/naveego/navigator-go/subscribers/server"
 
