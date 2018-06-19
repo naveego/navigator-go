@@ -19,11 +19,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/naveego/api/types/pipeline"
+	"github.com/naveego/navigator-go/pipeline"
 	"github.com/naveego/navigator-go/subscribers/protocol"
 	"github.com/spf13/viper"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 )
 
@@ -63,8 +62,7 @@ var benchmarkCmd = &cobra.Command{
 		dataPoint := pipeline.DataPoint{
 			Data: make(map[string]interface{}),
 		}
-		datapointMap := viper.GetStringMap("benchmark.datapoint")
-		mapstructure.Decode(datapointMap, &dataPoint)
+		keys := viper.GetStringSlice("benchmark.keyNames")
 		datapointValues := viper.Get("benchmark.data").([]interface{})
 
 		for _, x := range datapointValues {
@@ -72,13 +70,11 @@ var benchmarkCmd = &cobra.Command{
 			dataPoint.Data[kv["name"].(string)] = kv["value"]
 		}
 
-		pipeline.EnsureHashes(&dataPoint.Shape)
-
 		request := protocol.ReceiveShapeRequest{
 			DataPoint: dataPoint,
 		}
 
-		counterKey := request.DataPoint.Shape.KeyNames[0]
+		counterKey := keys[0]
 		counter := viper.GetInt("benchmark.seed")
 
 		max := counter + reps

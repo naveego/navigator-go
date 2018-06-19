@@ -1,8 +1,6 @@
 package protocol
 
-import (
-	"github.com/naveego/api/types/pipeline"
-)
+import "github.com/naveego/navigator-go/pipeline"
 
 type DiscoverShapesRequest struct {
 	Settings map[string]interface{} `json:"settings"`

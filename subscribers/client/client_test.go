@@ -5,9 +5,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/naveego/navigator-go/subscribers/protocol"
 	"github.com/naveego/navigator-go/subscribers/server"
+	"github.com/sirupsen/logrus"
 
 	"github.com/maraino/go-mock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -61,7 +61,7 @@ func (m *mockSubscriber) DiscoverShapes(request protocol.DiscoverShapesRequest) 
 
 var (
 	mockSubscriberInstance = &mockSubscriber{}
-	addr                   = "tcp://127.0.0.1:54321"
+	addr                   = "tcp://:54321"
 )
 
 func init() {
@@ -82,7 +82,9 @@ func Test_publisherProxy_TestConnection(t *testing.T) {
 	Convey("should call method and get response", t, func() {
 		var err error
 		var sut protocol.Subscriber
-		conn, err := net.Dial("tcp", "127.0.0.1:54321")
+		conn, err := net.Dial("tcp", ":54321")
+		So(err, ShouldBeNil)
+
 		sut, err = NewSubscriber(conn)
 
 		result, err := sut.TestConnection(protocol.TestConnectionRequest{
@@ -112,7 +114,8 @@ func Test_subscriberProxy_ReceiveDataPoint(t *testing.T) {
 
 		var err error
 		var sut protocol.Subscriber
-		conn, err = net.Dial("tcp", "127.0.0.1:54321")
+		conn, err = net.Dial("tcp", ":54321")
+		So(err, ShouldBeNil)
 		sut, err = NewSubscriber(conn)
 
 		actual, err := sut.ReceiveDataPoint(protocol.ReceiveShapeRequest{})

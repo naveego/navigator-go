@@ -9,8 +9,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/naveego/api/types/pipeline"
-
+	"github.com/naveego/navigator-go/pipeline"
 	"github.com/naveego/navigator-go/publishers/client"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/spf13/cobra"

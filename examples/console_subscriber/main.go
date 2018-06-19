@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/naveego/api/types/pipeline"
+	"github.com/naveego/navigator-go/pipeline"
 	"github.com/naveego/navigator-go/subscribers/protocol"
 	"github.com/naveego/navigator-go/subscribers/server"
 	"github.com/sirupsen/logrus"

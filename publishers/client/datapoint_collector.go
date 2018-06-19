@@ -5,7 +5,7 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
-	"github.com/naveego/api/types/pipeline"
+	"github.com/naveego/navigator-go/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
 )

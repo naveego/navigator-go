@@ -1,8 +1,6 @@
 package protocol
 
-import (
-	"github.com/naveego/api/types/pipeline"
-)
+import "github.com/naveego/navigator-go/pipeline"
 
 type InitializeSubscriberRequest struct {
 	Settings map[string]interface{} `json:"settings"`
@@ -34,8 +32,7 @@ type ConnectionTester interface {
 }
 
 type InitRequest struct {
-	Settings map[string]interface{}  `json:"settings"`
-	Mappings []pipeline.ShapeMapping `json:"mappings"`
+	Settings map[string]interface{} `json:"settings"`
 }
 
 type InitResponse struct {

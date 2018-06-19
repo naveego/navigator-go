@@ -20,19 +20,13 @@ benchmark:
       #   value: "Big"  
       # - name: Color
       #   value: "Blue"
-  datapoint:
-    source: Test
-    entity: Items
-    shape:
-      keyNames:
-        - ID
-        - SKU
-      properties:
-        - "DateAvailable:date"
-        - "ID:integer"
-        - "Name:string"
-        - "SKU:string"
-        # - "Price:float"
-        # - "Size:string"
-        # - "Color:string"
+  
+  keyNames:
+    - ID
+    - SKU
+  properties:
+    - "DateAvailable:date"
+    - "ID:integer"
+    - "Name:string"
+    - "SKU:string"
       

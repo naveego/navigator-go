@@ -9,11 +9,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/satori/go.uuid"
-
-	"github.com/naveego/api/types/pipeline"
+	"github.com/naveego/navigator-go/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
+	"github.com/rs/xid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -188,15 +187,13 @@ func (h *publisherHandler) Publish(request protocol.PublishRequest, toClient pro
 	go func() {
 		for i := 0; i < h.count; i++ {
 			dp := pipeline.DataPoint{
-				Repository: "vandelay",
-				Entity:     "item",
-				Source:     "test",
-				Action:     pipeline.DataPointUpsert,
-				KeyNames:   []string{"id"},
+				TenantID: "vandelay",
+				ShapeID:  "item",
+				Action:   pipeline.DataPointUpsert,
 				Data: map[string]interface{}{
 					"id":     i,
 					"name":   "John Doe",
-					"unique": uuid.NewV4().String(),
+					"unique": xid.New().String(),
 				},
 			}
 

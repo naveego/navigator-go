@@ -2,16 +2,14 @@ package client
 
 import (
 	"net"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/naveego/api/types/pipeline"
-
-	"github.com/sirupsen/logrus"
-	"github.com/maraino/go-mock"
+	mock "github.com/maraino/go-mock"
+	"github.com/naveego/navigator-go/pipeline"
 	"github.com/naveego/navigator-go/publishers/protocol"
 	"github.com/naveego/navigator-go/publishers/server"
+	"github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -53,11 +51,9 @@ func (m *mockHandler) Publish(request protocol.PublishRequest, toClient protocol
 		_, err := toClient.SendDataPoints(protocol.SendDataPointsRequest{
 			DataPoints: []pipeline.DataPoint{
 				{
-					Repository: "vandelay",
-					Entity:     "item",
-					Source:     "test",
-					Action:     pipeline.DataPointUpsert,
-					KeyNames:   []string{"id"},
+					TenantID: "vandelay",
+					ShapeID:  "item",
+					Action:   pipeline.DataPointUpsert,
 					Data: map[string]interface{}{
 						"id":   1,
 						"name": "John Doe",
@@ -86,8 +82,8 @@ func (m *mockHandler) TestConnection(request protocol.TestConnectionRequest) (pr
 
 var (
 	mockHandlerInstance = &mockHandler{}
-	publisherAddr       = "tcp://127.0.0.1:51001"
-	collectorAddr       = "tcp://127.0.0.1:51002"
+	publisherAddr       = "tcp://:51001"
+	collectorAddr       = "tcp://:51002"
 	output              chan []pipeline.DataPoint
 )
 
@@ -98,7 +94,7 @@ func init() {
 
 		err := srv.ListenAndServe()
 		if err != nil {
-			logrus.Fatal("Error shutting down server: ", err)
+			logrus.Panicf("Error shutting down server: ", err)
 		}
 	}()
 
@@ -126,7 +122,8 @@ func Test_publisherProxy_TestConnection(t *testing.T) {
 		}
 		mockHandlerInstance.When("TestConnection", mock.Any).Return(expected, nil)
 
-		conn, err := net.Dial("tcp", strings.Split(publisherAddr, "://")[1])
+		conn, err := net.Dial("tcp", ":51001")
+		So(err, ShouldBeNil)
 
 		sut, err := NewPublisher(conn)
 
@@ -155,7 +152,8 @@ func Test_publisherProxy_ReceiveDataPoint(t *testing.T) {
 
 		var err error
 		var sut PublisherProxy
-		conn, err := net.Dial("tcp", strings.Split(publisherAddr, "://")[1])
+		conn, err := net.Dial("tcp", ":51001")
+		So(err, ShouldBeNil)
 		defer conn.Close()
 
 		sut, err = NewPublisher(conn)
