@@ -81,7 +81,6 @@ func (d *publisherClientServer) SendDataPoints(sendRequest protocol.SendDataPoin
 // Done stops the collector.
 func (d *publisherClientServer) Done(doneRequest protocol.DoneRequest, response *protocol.DoneResponse) error {
 	d.listener.Close()
-	close(d.output)
 	*response = protocol.DoneResponse{}
 	return nil
 }
